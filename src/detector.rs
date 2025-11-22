@@ -13,32 +13,125 @@ impl JavaDetector {
         let mut versions = Vec::new();
         let search_paths = Self::get_search_paths();
 
+        println!("Scanning system for Java installations...");
+
+        // First, try to find Java via PATH
+        if let Ok(path_versions) = Self::detect_from_path() {
+            versions.extend(path_versions);
+        }
+
+        // Then scan directories
         for base_path in search_paths {
             if base_path.exists() {
+                println!("  Scanning: {}", base_path.display());
                 versions.extend(Self::scan_directory(&base_path)?);
+            }
+        }
+
+        // Deduplicate by path
+        versions.sort_by(|a, b| a.path.cmp(&b.path));
+        versions.dedup_by(|a, b| a.path == b.path);
+
+        Ok(versions)
+    }
+
+    /// Detect Java installations from system PATH
+    fn detect_from_path() -> Result<Vec<JavaVersion>> {
+        let mut versions = Vec::new();
+
+        if cfg!(windows) {
+            // Try 'where java' command
+            if let Ok(output) = Command::new("where").arg("java").output() {
+                if output.status.success() {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    for line in stdout.lines() {
+                        let java_path = PathBuf::from(line.trim());
+                        if java_path.exists() {
+                            // Get the parent directory twice to get JDK root (bin -> jdk)
+                            if let Some(parent) = java_path.parent().and_then(|p| p.parent()) {
+                                if Self::is_jdk_root(parent) {
+                                    if let Ok(version) = Self::detect_version(parent) {
+                                        versions.push(version);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Also try 'java -version' directly
+            if let Ok(output) = Command::new("java").arg("-version").output() {
+                if output.status.success() {
+                    // Try to find JAVA_HOME
+                    if let Ok(java_home) = std::env::var("JAVA_HOME") {
+                        let java_home_path = PathBuf::from(java_home);
+                        if Self::is_jdk_root(&java_home_path) {
+                            if let Ok(version) = Self::detect_version(&java_home_path) {
+                                versions.push(version);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Unix: use 'which java'
+            if let Ok(output) = Command::new("which").arg("java").output() {
+                if output.status.success() {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let java_path = PathBuf::from(stdout.trim());
+                    if let Some(parent) = java_path.parent().and_then(|p| p.parent()) {
+                        if Self::is_jdk_root(parent) {
+                            if let Ok(version) = Self::detect_version(parent) {
+                                versions.push(version);
+                            }
+                        }
+                    }
+                }
             }
         }
 
         Ok(versions)
     }
 
+    /// Get all available drive letters on Windows
+    #[cfg(windows)]
+    fn get_available_drives() -> Vec<String> {
+        let mut drives = Vec::new();
+        for letter in 'A'..='Z' {
+            let drive = format!("{}:\\", letter);
+            let path = PathBuf::from(&drive);
+            if path.exists() {
+                drives.push(drive);
+            }
+        }
+        drives
+    }
+
     fn get_search_paths() -> Vec<PathBuf> {
         let mut paths = Vec::new();
 
         if cfg!(windows) {
-            // Windows common paths
-            paths.push(PathBuf::from("C:\\Program Files\\Java"));
-            paths.push(PathBuf::from("C:\\Program Files\\Eclipse Adoptium"));
-            paths.push(PathBuf::from("C:\\Program Files\\Eclipse Foundation"));
-            paths.push(PathBuf::from("C:\\Program Files\\Amazon Corretto"));
-            paths.push(PathBuf::from("C:\\Program Files\\Zulu"));
-            paths.push(PathBuf::from("C:\\Program Files\\BellSoft"));
-            paths.push(PathBuf::from("C:\\Program Files\\Microsoft"));
-            paths.push(PathBuf::from("C:\\Program Files\\GraalVM"));
-
-            // Also check Program Files (x86)
-            paths.push(PathBuf::from("C:\\Program Files (x86)\\Java"));
-            paths.push(PathBuf::from("C:\\Program Files (x86)\\Eclipse Adoptium"));
+            // Get all available drives
+            let drives = Self::get_available_drives();
+            
+            for drive in drives {
+                // Common Java installation paths for each drive
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Java"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Eclipse Adoptium"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Eclipse Foundation"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Amazon Corretto"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Zulu"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("BellSoft"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Microsoft"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("GraalVM"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Azul"));
+                paths.push(PathBuf::from(&drive).join("Program Files").join("Liberica"));
+                
+                // Also check Program Files (x86)
+                paths.push(PathBuf::from(&drive).join("Program Files (x86)").join("Java"));
+                paths.push(PathBuf::from(&drive).join("Program Files (x86)").join("Eclipse Adoptium"));
+            }
         } else if cfg!(unix) {
             // Unix/Linux common paths
             paths.push(PathBuf::from("/usr/lib/jvm"));

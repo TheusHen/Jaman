@@ -91,9 +91,21 @@ The installer will:
 
 2. Extract to your preferred location (e.g., `Downloads` folder)
 
-3. Add to PATH:
-   - **Windows**: Add the folder to your User PATH environment variable
-   - **macOS/Linux**: Add `export PATH="$PATH:/path/to/jaman"` to `~/.bashrc` or `~/.zshrc`
+3. Run jaman for the first time - **it will automatically add itself to your system PATH!**
+   ```bash
+   # Windows
+   .\jaman.exe --help
+   
+   # macOS/Linux
+   ./jaman --help
+   ```
+
+4. Open a new terminal window and type:
+   ```bash
+   jaman --help
+   ```
+
+> **Note**: On the first run, jaman automatically adds itself to your system PATH. On Windows, this takes effect immediately in new terminal windows. On macOS/Linux, you may need to restart your terminal or run `source ~/.bashrc` (or `~/.zshrc`).
 
 #### From Source
 
@@ -209,10 +221,14 @@ Scan system for existing Java installations and add them to jaman.
 jaman scan
 ```
 
-Searches common installation directories:
-- **Windows**: `C:\Program Files\Java`, `C:\Program Files\Eclipse Adoptium`, etc.
-- **macOS**: `/Library/Java/JavaVirtualMachines`
-- **Linux**: `/usr/lib/jvm`, `/usr/java`, `/opt/java`
+**Enhanced scanning features:**
+- Searches **all available disk drives** (C:, D:, E:, etc.) on Windows
+- Detects Java installations via `java -version` and system PATH
+- Uses `where java` (Windows) or `which java` (Unix) to find active installations
+- Searches common installation directories:
+  - **Windows**: All drives under `Program Files\Java`, `Program Files\Eclipse Adoptium`, etc.
+  - **macOS**: `/Library/Java/JavaVirtualMachines`
+  - **Linux**: `/usr/lib/jvm`, `/usr/java`, `/opt/java`
 
 ### `jaman doctor`
 Run diagnostics to verify jaman configuration and Java setup.
@@ -251,6 +267,9 @@ jaman config --show
 
 # Set custom installation directory
 jaman config --set-install-dir "D:\Java\JDKs"
+
+# Set custom download directory
+jaman config --set-download-dir "D:\Java\Downloads"
 ```
 
 ## 💡 Usage Examples

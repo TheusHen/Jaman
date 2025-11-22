@@ -10,6 +10,113 @@ use winreg::enums::*;
 pub struct PathManager;
 
 impl PathManager {
+    /// Add jaman executable to system PATH
+    #[cfg(windows)]
+    pub fn add_jaman_to_path() -> Result<()> {
+        use std::env;
+        
+        // Get the current executable path
+        let exe_path = env::current_exe()?;
+        let exe_dir = exe_path
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine executable directory"))?;
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let env_key = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
+
+        // Get current PATH
+        let current_path: String = env_key.get_value("Path").unwrap_or_default();
+
+        // Check if jaman is already in PATH
+        let exe_dir_str = exe_dir.to_string_lossy();
+        if current_path
+            .split(';')
+            .any(|p| p.trim().eq_ignore_ascii_case(exe_dir_str.as_ref()))
+        {
+            return Ok(()); // Already in PATH
+        }
+
+        // Add jaman directory to PATH
+        let new_path = if current_path.is_empty() {
+            exe_dir_str.to_string()
+        } else if current_path.ends_with(';') {
+            format!("{}{}", current_path, exe_dir_str)
+        } else {
+            format!("{};{}", current_path, exe_dir_str)
+        };
+
+        env_key.set_value("Path", &new_path)?;
+
+        // Broadcast environment change
+        Self::broadcast_environment_change();
+
+        Ok(())
+    }
+
+    /// Add jaman executable to system PATH (Unix)
+    #[cfg(not(windows))]
+    pub fn add_jaman_to_path() -> Result<()> {
+        use std::env;
+        
+        let exe_path = env::current_exe()?;
+        let exe_dir = exe_path
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine executable directory"))?;
+
+        let home_dir =
+            dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+
+        let shell_configs = vec![
+            home_dir.join(".bashrc"),
+            home_dir.join(".bash_profile"),
+            home_dir.join(".zshrc"),
+            home_dir.join(".profile"),
+        ];
+
+        let exe_dir_str = exe_dir.to_string_lossy();
+        let export_line = format!(
+            "\n# Added by jaman\nexport PATH=\"{}:$PATH\"\n",
+            exe_dir_str
+        );
+
+        for config_file in shell_configs {
+            if config_file.exists() {
+                let content = std::fs::read_to_string(&config_file)?;
+
+                // Check if already added
+                if content.contains(&format!("export PATH=\"{}:", exe_dir_str)) {
+                    continue;
+                }
+
+                // Add new entry
+                let mut content = content;
+                content.push_str(&export_line);
+                std::fs::write(&config_file, content)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Check if jaman is in PATH
+    pub fn is_jaman_in_path() -> bool {
+        use std::env;
+        
+        if let Ok(exe_path) = env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let exe_dir_str = exe_dir.to_string_lossy();
+                
+                if let Ok(path_var) = env::var("PATH") {
+                    let separator = if cfg!(windows) { ';' } else { ':' };
+                    return path_var
+                        .split(separator)
+                        .any(|p| p.trim().eq_ignore_ascii_case(exe_dir_str.as_ref()));
+                }
+            }
+        }
+        false
+    }
+
     /// Set the active Java version by modifying system PATH
     #[cfg(windows)]
     pub fn set_active_java(java_home: &Path) -> Result<()> {

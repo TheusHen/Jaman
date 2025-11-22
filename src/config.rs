@@ -7,6 +7,7 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub installation_dir: PathBuf,
+    pub download_dir: PathBuf,
     pub active_version: Option<String>,
     pub installed_versions: Vec<JavaVersion>,
     pub last_scan: Option<DateTime<Utc>>,
@@ -24,9 +25,10 @@ pub struct JavaVersion {
 }
 
 impl Config {
-    pub fn new(installation_dir: PathBuf) -> Self {
+    pub fn new(installation_dir: PathBuf, download_dir: PathBuf) -> Self {
         Self {
             installation_dir,
+            download_dir,
             active_version: None,
             installed_versions: Vec::new(),
             last_scan: None,
@@ -74,11 +76,20 @@ impl Config {
             .join("jaman")
             .join("jdks");
 
+        let download_dir = dirs::data_local_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine data directory"))?
+            .join("jaman")
+            .join("downloads");
+
         if !installation_dir.exists() {
             fs::create_dir_all(&installation_dir)?;
         }
 
-        Ok(Self::new(installation_dir))
+        if !download_dir.exists() {
+            fs::create_dir_all(&download_dir)?;
+        }
+
+        Ok(Self::new(installation_dir, download_dir))
     }
 
     pub fn add_version(&mut self, version: JavaVersion) {

@@ -16,6 +16,8 @@ Open Terminal and run:
 curl -fsSL https://raw.githubusercontent.com/TheusHen/jaman/main/install.sh | bash
 ```
 
+> **✨ New Feature**: Jaman now automatically adds itself to your system PATH on first run! No need to manually configure PATH anymore.
+
 **Restart your terminal after installation!**
 
 ## Verify Installation
@@ -42,7 +44,7 @@ This shows your current setup and available commands.
 jaman scan
 ```
 
-This finds any Java installations already on your system.
+**Enhanced scanning**: This now searches all available disk drives and detects Java installations via PATH and system commands (`java -version`, `where java`).
 
 ### 3. See What's Available
 

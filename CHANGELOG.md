@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Auto PATH registration**: Jaman now automatically adds itself to the system PATH on first run
+- **Configurable download directory**: New `download_dir` configuration option for custom download locations
+- **Enhanced system scanning**: 
+  - Scans all available disk drives on Windows (not just C:)
+  - Detects Java installations via `java -version` command
+  - Uses `where java` (Windows) / `which java` (Unix) to find installations in PATH
+- New command option: `jaman config --set-download-dir` to configure download directory
 - Initial release of Jaman
 - Multi-version Java management support
 - Download and install Java from Eclipse Adoptium
@@ -22,6 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration management
 - Comprehensive test suite
 - CI/CD workflows for automated builds
+
+### Changed
+- Improved `jaman scan` to search more thoroughly across system
+- Updated configuration structure to include `download_dir`
+
+### Fixed
+- Better detection of Java installations in non-standard locations
 
 ## [0.1.0] - 2025-11-22
 

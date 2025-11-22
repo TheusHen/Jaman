@@ -83,6 +83,10 @@ enum Commands {
         #[arg(long)]
         set_install_dir: Option<String>,
 
+        /// Set download directory
+        #[arg(long)]
+        set_download_dir: Option<String>,
+
         /// Show current configuration
         #[arg(long)]
         show: bool,
@@ -91,6 +95,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Check and add jaman to PATH on first run
+    ensure_jaman_in_path()?;
+
     let cli = Cli::parse();
 
     // If no command provided, show status
@@ -110,8 +117,9 @@ async fn main() -> Result<()> {
         Some(Commands::Status) => show_status().await?,
         Some(Commands::Config {
             set_install_dir,
+            set_download_dir,
             show,
-        }) => handle_config(set_install_dir, show)?,
+        }) => handle_config(set_install_dir, set_download_dir, show)?,
     }
 
     Ok(())
@@ -172,6 +180,10 @@ async fn show_status() -> Result<()> {
         "  Installation dir:  {}",
         style(config.installation_dir.display()).dim()
     );
+    println!(
+        "  Download dir:      {}",
+        style(config.download_dir.display()).dim()
+    );
 
     // Last scan
     if let Some(last_scan) = config.last_scan {
@@ -222,7 +234,7 @@ async fn show_status() -> Result<()> {
     Ok(())
 }
 
-fn handle_config(set_install_dir: Option<String>, show: bool) -> Result<()> {
+fn handle_config(set_install_dir: Option<String>, set_download_dir: Option<String>, show: bool) -> Result<()> {
     use config::Config;
     use std::path::PathBuf;
 
@@ -241,6 +253,10 @@ fn handle_config(set_install_dir: Option<String>, show: bool) -> Result<()> {
             style(config.installation_dir.display()).cyan()
         );
         println!(
+            "  Download dir:      {}",
+            style(config.download_dir.display()).cyan()
+        );
+        println!(
             "  Tracked versions:  {}",
             style(config.installed_versions.len()).cyan()
         );
@@ -252,8 +268,10 @@ fn handle_config(set_install_dir: Option<String>, show: bool) -> Result<()> {
         return Ok(());
     }
 
+    let mut config = Config::load()?;
+    let mut updated = false;
+
     if let Some(dir_path) = set_install_dir {
-        let mut config = Config::load()?;
         let new_path = PathBuf::from(dir_path);
 
         if !new_path.exists() {
@@ -261,13 +279,89 @@ fn handle_config(set_install_dir: Option<String>, show: bool) -> Result<()> {
         }
 
         config.installation_dir = new_path.clone();
-        config.save()?;
+        updated = true;
 
         println!(
             "{} Installation directory set to: {}",
             style("✓").green().bold(),
             style(new_path.display()).cyan()
         );
+    }
+
+    if let Some(dir_path) = set_download_dir {
+        let new_path = PathBuf::from(dir_path);
+
+        if !new_path.exists() {
+            std::fs::create_dir_all(&new_path)?;
+        }
+
+        config.download_dir = new_path.clone();
+        updated = true;
+
+        println!(
+            "{} Download directory set to: {}",
+            style("✓").green().bold(),
+            style(new_path.display()).cyan()
+        );
+    }
+
+    if updated {
+        config.save()?;
+    }
+
+    Ok(())
+}
+
+/// Ensure jaman is added to PATH on first run
+fn ensure_jaman_in_path() -> Result<()> {
+    use path_manager::PathManager;
+    use config::Config;
+
+    // Check if this is the first run by checking if config exists
+    let config_file = Config::config_file()?;
+    let is_first_run = !config_file.exists();
+
+    // Always check if jaman is in PATH and add if not
+    if !PathManager::is_jaman_in_path() {
+        println!("{}", style("Setting up jaman...").cyan().bold());
+        println!("{}", style("Adding jaman to system PATH...").dim());
+        
+        if let Err(e) = PathManager::add_jaman_to_path() {
+            eprintln!(
+                "{} Failed to add jaman to PATH: {}",
+                style("⚠").yellow(),
+                e
+            );
+            eprintln!(
+                "{}",
+                style("You may need to add jaman to PATH manually.").yellow()
+            );
+        } else {
+            println!(
+                "{} {}",
+                style("✓").green().bold(),
+                style("jaman added to PATH successfully!").green()
+            );
+            
+            if cfg!(windows) {
+                println!(
+                    "{}",
+                    style("You can now use 'jaman' command in new terminal windows.").dim()
+                );
+            } else {
+                println!(
+                    "{}",
+                    style("Please restart your terminal or run: source ~/.bashrc").dim()
+                );
+            }
+            
+            if is_first_run {
+                println!();
+                println!("{}", style("Welcome to jaman! 🎉").green().bold());
+                println!("{}", style("Run 'jaman --help' to get started.").dim());
+            }
+        }
+        println!();
     }
 
     Ok(())
