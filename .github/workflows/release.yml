@@ -1,0 +1,230 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Windows x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: jaman.exe
+            asset_name: jaman-windows-x64.exe
+
+          # macOS x64 (Intel)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: jaman
+            asset_name: jaman-macos-x64
+
+          # macOS ARM64 (Apple Silicon)
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: jaman
+            asset_name: jaman-macos-arm64
+
+          # Linux x64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: jaman
+            asset_name: jaman-linux-x64
+
+          # Linux ARM64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: jaman
+            asset_name: jaman-linux-arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    - name: Install cross-compilation tools (Linux ARM64)
+      if: matrix.target == 'aarch64-unknown-linux-gnu'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-${{ matrix.target }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build release binary
+      run: cargo build --release --target ${{ matrix.target }}
+
+    - name: Strip binary (Unix)
+      if: matrix.os != 'windows-latest'
+      run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+    - name: Create archive (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $target_path = "target/${{ matrix.target }}/release/${{ matrix.artifact_name }}"
+        Compress-Archive -Path $target_path -DestinationPath "${{ matrix.asset_name }}.zip"
+
+    - name: Create archive (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd target/${{ matrix.target }}/release
+        tar czf ../../../${{ matrix.asset_name }}.tar.gz ${{ matrix.artifact_name }}
+        cd ../../..
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}
+        path: |
+          ${{ matrix.asset_name }}.zip
+          ${{ matrix.asset_name }}.tar.gz
+
+  create-release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create checksums
+      run: |
+        cd artifacts
+        for dir in */; do
+          cd "$dir"
+          for file in *; do
+            sha256sum "$file" > "$file.sha256"
+          done
+          cd ..
+        done
+        cd ..
+
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Jaman v${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          ## Jaman v${{ steps.get_version.outputs.VERSION }}
+          
+          ### Installation
+          
+          Download the appropriate binary for your platform:
+          
+          - **Windows**: `jaman-windows-x64.exe`
+          - **macOS (Intel)**: `jaman-macos-x64`
+          - **macOS (Apple Silicon)**: `jaman-macos-arm64`
+          - **Linux (x64)**: `jaman-linux-x64`
+          - **Linux (ARM64)**: `jaman-linux-arm64`
+          
+          ### Quick Install
+          
+          #### Windows (PowerShell)
+          ```powershell
+          # Download to Downloads folder
+          Invoke-WebRequest -Uri "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/jaman-windows-x64.exe.zip" -OutFile "$env:USERPROFILE\Downloads\jaman.zip"
+          
+          # Extract
+          Expand-Archive -Path "$env:USERPROFILE\Downloads\jaman.zip" -DestinationPath "$env:USERPROFILE\Downloads\jaman"
+          
+          # Add to PATH (current session)
+          $env:PATH += ";$env:USERPROFILE\Downloads\jaman"
+          
+          # Add to PATH permanently (run as admin)
+          [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$env:USERPROFILE\Downloads\jaman", "User")
+          
+          # Verify
+          jaman --version
+          ```
+          
+          #### macOS / Linux
+          ```bash
+          # Download to Downloads folder
+          curl -L "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/jaman-linux-x64.tar.gz" -o ~/Downloads/jaman.tar.gz
+          
+          # Extract
+          tar -xzf ~/Downloads/jaman.tar.gz -C ~/Downloads/
+          
+          # Make executable
+          chmod +x ~/Downloads/jaman
+          
+          # Add to PATH (add to ~/.bashrc or ~/.zshrc)
+          export PATH="$HOME/Downloads:$PATH"
+          
+          # Verify
+          jaman --version
+          ```
+          
+          ### What's Changed
+          
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/**/*.zip
+          artifacts/**/*.tar.gz
+          artifacts/**/*.sha256
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-crates:
+    name: Publish to crates.io
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Publish to crates.io
+      run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
+      continue-on-error: true
