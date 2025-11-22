@@ -1,7 +1,7 @@
 use crate::config::JavaVersion;
 use anyhow::Result;
 use regex::Regex;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use walkdir::WalkDir;
 
@@ -179,7 +179,7 @@ impl JavaDetector {
     }
 
     /// Verify a Java installation is valid
-    pub fn verify_installation(path: &PathBuf) -> Result<bool> {
+    pub fn verify_installation(path: &Path) -> Result<bool> {
         let java_exe = if cfg!(windows) {
             path.join("bin").join("java.exe")
         } else {

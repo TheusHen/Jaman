@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[cfg(windows)]
 use winreg::RegKey;
@@ -12,18 +12,18 @@ pub struct PathManager;
 impl PathManager {
     /// Set the active Java version by modifying system PATH
     #[cfg(windows)]
-    pub fn set_active_java(java_home: &PathBuf) -> Result<()> {
+    pub fn set_active_java(java_home: &Path) -> Result<()> {
         Self::set_active_java_windows(java_home)
     }
 
     /// Set the active Java version by modifying system PATH
     #[cfg(not(windows))]
-    pub fn set_active_java(java_home: &PathBuf) -> Result<()> {
+    pub fn set_active_java(java_home: &Path) -> Result<()> {
         Self::set_active_java_unix(java_home)
     }
 
     #[cfg(windows)]
-    fn set_active_java_windows(java_home: &PathBuf) -> Result<()> {
+    fn set_active_java_windows(java_home: &Path) -> Result<()> {
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         let env_key = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
 
@@ -50,7 +50,7 @@ impl PathManager {
     }
 
     #[cfg(not(windows))]
-    fn set_active_java_unix(java_home: &PathBuf) -> Result<()> {
+    fn set_active_java_unix(java_home: &Path) -> Result<()> {
         // For Unix systems, we'll create/update shell configuration files
         let home_dir =
             dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
@@ -128,6 +128,7 @@ impl PathManager {
         }
     }
 
+    #[cfg(windows)]
     fn remove_java_paths(path: &str) -> String {
         let paths: Vec<&str> = path.split(';').collect();
         let filtered: Vec<&str> = paths
@@ -172,6 +173,7 @@ impl PathManager {
     }
 
     /// Check if jaman has control over Java PATH
+    #[allow(dead_code)]
     pub fn is_jaman_active() -> bool {
         if let Some(java_home) = Self::get_current_java_home() {
             let config = crate::config::Config::load();
@@ -187,12 +189,14 @@ impl PathManager {
 
     /// Remove Java from PATH (deactivate)
     #[cfg(windows)]
+    #[allow(dead_code)]
     pub fn deactivate_java() -> Result<()> {
         Self::deactivate_java_windows()
     }
 
     /// Remove Java from PATH (deactivate)
     #[cfg(not(windows))]
+    #[allow(dead_code)]
     pub fn deactivate_java() -> Result<()> {
         Self::deactivate_java_unix()
     }

@@ -5,7 +5,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,6 +20,12 @@ pub struct AvailableVersion {
 
 pub struct Downloader {
     client: Client,
+}
+
+impl Default for Downloader {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Downloader {
@@ -93,7 +99,7 @@ impl Downloader {
     pub async fn download_and_install(
         &self,
         version: &AvailableVersion,
-        installation_dir: &PathBuf,
+        installation_dir: &Path,
     ) -> Result<PathBuf> {
         let temp_dir = TempDir::new()?;
         let filename = self.extract_filename(&version.download_url);
@@ -109,7 +115,7 @@ impl Downloader {
         }
 
         // Extract archive
-        let extract_dir = installation_dir.join(&format!(
+        let extract_dir = installation_dir.join(format!(
             "{}-{}",
             version.vendor.replace(" ", "_"),
             version.version
@@ -183,7 +189,7 @@ impl Downloader {
         Ok(())
     }
 
-    fn extract_zip(&self, archive: &PathBuf, dest: &PathBuf) -> Result<()> {
+    fn extract_zip(&self, archive: &Path, dest: &Path) -> Result<()> {
         let file = File::open(archive)?;
         let mut archive = zip::ZipArchive::new(file)?;
 
@@ -247,7 +253,10 @@ impl Downloader {
     }
 
     fn extract_filename(&self, url: &str) -> String {
-        url.split('/').last().unwrap_or("download.zip").to_string()
+        url.split('/')
+            .next_back()
+            .unwrap_or("download.zip")
+            .to_string()
     }
 }
 

@@ -31,11 +31,7 @@ impl CleanCommand {
             }
 
             // Skip active version
-            if config
-                .active_version
-                .as_ref()
-                .map_or(false, |v| v == &version.version)
-            {
+            if config.active_version.as_ref() == Some(&version.version) {
                 continue;
             }
 

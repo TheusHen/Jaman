@@ -53,7 +53,7 @@ impl Config {
         let config_file = Self::config_file()?;
 
         if !config_file.exists() {
-            return Ok(Self::default_config()?);
+            return Self::default_config();
         }
 
         let content = fs::read_to_string(config_file)?;
@@ -135,6 +135,7 @@ impl JavaVersion {
         }
     }
 
+    #[allow(dead_code)]
     pub fn javac_executable(&self) -> PathBuf {
         if cfg!(windows) {
             self.path.join("bin").join("javac.exe")

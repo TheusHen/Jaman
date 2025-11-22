@@ -35,11 +35,7 @@ impl ActivateCommand {
                 .iter()
                 .map(|v| {
                     let lts = if v.is_lts { " [LTS]" } else { "" };
-                    let active = if config
-                        .active_version
-                        .as_ref()
-                        .map_or(false, |av| av == &v.version)
-                    {
+                    let active = if config.active_version.as_ref() == Some(&v.version) {
                         " (active)"
                     } else {
                         ""

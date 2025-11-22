@@ -49,10 +49,7 @@ impl ListCommand {
         versions.sort_by(|a, b| b.version.cmp(&a.version));
 
         for version in versions {
-            let is_active = config
-                .active_version
-                .as_ref()
-                .map_or(false, |v| v == &version.version);
+            let is_active = config.active_version.as_ref() == Some(&version.version);
 
             let status_icon = if is_active {
                 style("●").green().bold()
