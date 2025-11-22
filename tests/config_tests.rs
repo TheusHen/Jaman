@@ -197,7 +197,10 @@ fn test_config_save_and_load() {
     let temp_dir = TempDir::new().unwrap();
     std::env::set_var("HOME", temp_dir.path());
 
-    let mut config = Config::new(temp_dir.path().join("jdks"), temp_dir.path().join("downloads"));
+    let mut config = Config::new(
+        temp_dir.path().join("jdks"),
+        temp_dir.path().join("downloads"),
+    );
 
     let version = JavaVersion::new(
         "21.0.1".to_string(),
