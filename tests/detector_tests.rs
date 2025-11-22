@@ -7,8 +7,8 @@ fn test_is_lts_version() {
     // We'll test through version detection if possible
     // This is a simplified test
 
-    let lts_versions = vec!["8", "11", "17", "21"];
-    let non_lts_versions = vec!["9", "10", "12", "13", "14", "15", "16", "18", "19", "20"];
+    let _lts_versions = ["8", "11", "17", "21"];
+    let _non_lts_versions = ["9", "10", "12", "13", "14", "15", "16", "18", "19", "20"];
 
     // LTS versions should be identified correctly
     // This would require exposing the method or testing indirectly
@@ -26,8 +26,8 @@ fn test_version_normalization() {
     // Test that old Java version format (1.8.0) is normalized to (8.0)
     // This tests the parse_version_output logic indirectly
 
-    let old_format = "1.8.0_292";
-    let expected = "8.0_292";
+    let _old_format = "1.8.0_292";
+    let _expected = "8.0_292";
 
     // Would need to expose or test through public API
 }
@@ -74,7 +74,7 @@ fn test_verify_installation_invalid_path() {
 
     // Should return Ok(false) for invalid path
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), false);
+    assert!(!result.unwrap());
 }
 
 #[test]

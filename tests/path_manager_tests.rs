@@ -50,8 +50,8 @@ fn test_is_jaman_active() {
     // Test if jaman is controlling Java
     let result = PathManager::is_jaman_active();
 
-    // Should return a boolean
-    assert!(result == true || result == false);
+    // Should return a boolean - just verify it compiles and returns without panic
+    let _ = result;
 }
 
 #[test]

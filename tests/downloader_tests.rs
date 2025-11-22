@@ -1,11 +1,9 @@
 use jaman::downloader::{AvailableVersion, Downloader};
-use std::path::PathBuf;
 
 #[tokio::test]
 async fn test_downloader_new() {
-    let downloader = Downloader::new();
-    // Should create successfully
-    assert!(true);
+    let _downloader = Downloader::new();
+    // Should create successfully without panicking
 }
 
 #[tokio::test]
@@ -57,7 +55,11 @@ fn test_extract_filename() {
     ];
 
     for (url, expected) in urls {
-        let filename = url.split('/').last().unwrap_or("download.zip").to_string();
+        let filename = url
+            .split('/')
+            .next_back()
+            .unwrap_or("download.zip")
+            .to_string();
         let filename = if filename.is_empty() {
             "download.zip".to_string()
         } else {
@@ -102,10 +104,10 @@ fn format_size(bytes: u64) -> String {
 #[tokio::test]
 #[ignore] // Ignore as it requires actual download
 async fn test_download_and_install() {
-    let downloader = Downloader::new();
-    let temp_dir = tempfile::TempDir::new().unwrap();
+    let _downloader = Downloader::new();
+    let _temp_dir = tempfile::TempDir::new().unwrap();
 
-    let version = AvailableVersion {
+    let _version = AvailableVersion {
         version: "21.0.1".to_string(),
         vendor: "Eclipse Temurin".to_string(),
         is_lts: true,
