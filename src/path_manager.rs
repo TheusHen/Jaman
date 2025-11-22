@@ -142,6 +142,7 @@ impl PathManager {
         filtered.join(";")
     }
 
+    #[cfg(not(windows))]
     fn remove_jaman_entries(content: &str) -> String {
         let lines: Vec<&str> = content.lines().collect();
         let mut result = Vec::new();
