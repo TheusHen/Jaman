@@ -162,13 +162,12 @@ impl JavaDetector {
 
     #[cfg(not(windows))]
     fn get_search_paths() -> Vec<PathBuf> {
-        let mut paths = Vec::new();
-
-        // Unix/Linux common paths
-        paths.push(PathBuf::from("/usr/lib/jvm"));
-        paths.push(PathBuf::from("/usr/java"));
-        paths.push(PathBuf::from("/opt/java"));
-        paths.push(PathBuf::from("/Library/Java/JavaVirtualMachines"));
+        let mut paths = vec![
+            PathBuf::from("/usr/lib/jvm"),
+            PathBuf::from("/usr/java"),
+            PathBuf::from("/opt/java"),
+            PathBuf::from("/Library/Java/JavaVirtualMachines"),
+        ];
 
         // User-installed
         if let Some(home) = dirs::home_dir() {
