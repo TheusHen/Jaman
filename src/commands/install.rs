@@ -1,8 +1,8 @@
+use crate::config::{Config, JavaVersion};
+use crate::downloader::Downloader;
 use anyhow::Result;
 use console::style;
 use dialoguer::Select;
-use crate::config::{Config, JavaVersion};
-use crate::downloader::Downloader;
 
 pub struct InstallCommand;
 
@@ -49,8 +49,11 @@ impl InstallCommand {
         if config.get_version(&selected_version.version).is_some() {
             println!(
                 "{}",
-                style(format!("Version {} is already installed", selected_version.version))
-                    .yellow()
+                style(format!(
+                    "Version {} is already installed",
+                    selected_version.version
+                ))
+                .yellow()
             );
             return Ok(());
         }

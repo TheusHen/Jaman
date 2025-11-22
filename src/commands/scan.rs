@@ -1,9 +1,9 @@
-use anyhow::Result;
-use console::style;
-use indicatif::{ProgressBar, ProgressStyle};
-use chrono::Utc;
 use crate::config::Config;
 use crate::detector::JavaDetector;
+use anyhow::Result;
+use chrono::Utc;
+use console::style;
+use indicatif::{ProgressBar, ProgressStyle};
 
 pub struct ScanCommand;
 
@@ -11,13 +11,15 @@ impl ScanCommand {
     pub async fn execute() -> Result<()> {
         let mut config = Config::load()?;
 
-        println!("{}\n", style("Scanning system for Java installations...").bold().green());
+        println!(
+            "{}\n",
+            style("Scanning system for Java installations...")
+                .bold()
+                .green()
+        );
 
         let pb = ProgressBar::new_spinner();
-        pb.set_style(
-            ProgressStyle::default_spinner()
-                .template("{spinner:.green} {msg}")?
-        );
+        pb.set_style(ProgressStyle::default_spinner().template("{spinner:.green} {msg}")?);
         pb.set_message("Searching common installation directories...");
         pb.enable_steady_tick(std::time::Duration::from_millis(100));
 
@@ -27,12 +29,19 @@ impl ScanCommand {
         pb.finish_and_clear();
 
         if detected_versions.is_empty() {
-            println!("{}", style("No Java installations found on the system.").yellow());
-            println!("\nUse {} to install a version.", style("jaman install").cyan());
+            println!(
+                "{}",
+                style("No Java installations found on the system.").yellow()
+            );
+            println!(
+                "\nUse {} to install a version.",
+                style("jaman install").cyan()
+            );
             return Ok(());
         }
 
-        println!("{} {} Java installation(s)\n", 
+        println!(
+            "{} {} Java installation(s)\n",
             style("Found").green().bold(),
             style(detected_versions.len()).cyan().bold()
         );
@@ -42,7 +51,10 @@ impl ScanCommand {
 
         for version in detected_versions {
             // Check if already in config
-            let already_exists = config.installed_versions.iter().any(|v| v.path == version.path);
+            let already_exists = config
+                .installed_versions
+                .iter()
+                .any(|v| v.path == version.path);
 
             if already_exists {
                 println!(
@@ -79,7 +91,10 @@ impl ScanCommand {
         );
 
         if added_count > 0 {
-            println!("\n{}", style("Use 'jaman list' to see all tracked versions.").dim());
+            println!(
+                "\n{}",
+                style("Use 'jaman list' to see all tracked versions.").dim()
+            );
         }
 
         Ok(())

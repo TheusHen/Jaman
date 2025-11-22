@@ -6,10 +6,10 @@ fn test_is_lts_version() {
     // Using the private method through the public API indirectly
     // We'll test through version detection if possible
     // This is a simplified test
-    
-    let lts_versions = vec!["8", "11", "17", "21"];
-    let non_lts_versions = vec!["9", "10", "12", "13", "14", "15", "16", "18", "19", "20"];
-    
+
+    let _lts_versions = ["8", "11", "17", "21"];
+    let _non_lts_versions = ["9", "10", "12", "13", "14", "15", "16", "18", "19", "20"];
+
     // LTS versions should be identified correctly
     // This would require exposing the method or testing indirectly
 }
@@ -25,10 +25,10 @@ fn test_detect_architecture() {
 fn test_version_normalization() {
     // Test that old Java version format (1.8.0) is normalized to (8.0)
     // This tests the parse_version_output logic indirectly
-    
-    let old_format = "1.8.0_292";
-    let expected = "8.0_292";
-    
+
+    let _old_format = "1.8.0_292";
+    let _expected = "8.0_292";
+
     // Would need to expose or test through public API
 }
 
@@ -40,7 +40,7 @@ fn test_get_search_paths_windows() {
         PathBuf::from("C:\\Program Files\\Java"),
         PathBuf::from("C:\\Program Files\\Eclipse Adoptium"),
     ];
-    
+
     // Verify paths exist in search list
     for path in paths {
         // Would test through JavaDetector::scan_system()
@@ -52,11 +52,8 @@ fn test_get_search_paths_windows() {
 #[cfg(target_os = "linux")]
 fn test_get_search_paths_linux() {
     // Test that Linux search paths are correct
-    let paths = vec![
-        PathBuf::from("/usr/lib/jvm"),
-        PathBuf::from("/usr/java"),
-    ];
-    
+    let paths = vec![PathBuf::from("/usr/lib/jvm"), PathBuf::from("/usr/java")];
+
     for path in paths {
         assert!(path.to_string_lossy().starts_with("/usr"));
     }
@@ -74,10 +71,10 @@ fn test_get_search_paths_macos() {
 fn test_verify_installation_invalid_path() {
     let invalid_path = PathBuf::from("/nonexistent/path/to/java");
     let result = JavaDetector::verify_installation(&invalid_path);
-    
+
     // Should return Ok(false) for invalid path
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), false);
+    assert!(!result.unwrap());
 }
 
 #[test]
@@ -87,9 +84,13 @@ fn test_parse_vendor_from_output() {
         ("java version \"1.8.0_292\" (Oracle)", "Oracle"),
         ("Eclipse Temurin version \"17.0.1\"", "Temurin"),
     ];
-    
+
     // Would test vendor detection
     for (output, expected_vendor) in outputs {
-        assert!(output.to_lowercase().contains(&expected_vendor.to_lowercase()));
+        assert!(
+            output
+                .to_lowercase()
+                .contains(&expected_vendor.to_lowercase())
+        );
     }
 }

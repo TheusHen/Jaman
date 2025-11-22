@@ -1,9 +1,9 @@
+use crate::config::Config;
+use crate::detector::JavaDetector;
+use crate::path_manager::PathManager;
 use anyhow::Result;
 use console::style;
 use std::process::Command;
-use crate::config::Config;
-use crate::path_manager::PathManager;
-use crate::detector::JavaDetector;
 
 pub struct DoctorCommand;
 
@@ -19,8 +19,14 @@ impl DoctorCommand {
         match Config::load() {
             Ok(config) => {
                 Self::print_success("Configuration file is valid");
-                println!("  Installation directory: {}", style(config.installation_dir.display()).cyan());
-                println!("  Tracked versions: {}", style(config.installed_versions.len()).cyan());
+                println!(
+                    "  Installation directory: {}",
+                    style(config.installation_dir.display()).cyan()
+                );
+                println!(
+                    "  Tracked versions: {}",
+                    style(config.installed_versions.len()).cyan()
+                );
                 checks_passed += 1;
             }
             Err(e) => {
@@ -35,7 +41,7 @@ impl DoctorCommand {
         println!("{}", style("Checking active Java...").bold());
         if let Some(java_home) = PathManager::get_current_java_home() {
             Self::print_success(&format!("JAVA_HOME is set: {}", java_home.display()));
-            
+
             // Verify it's valid
             if JavaDetector::verify_installation(&java_home)? {
                 Self::print_success("Java installation is valid");
@@ -83,13 +89,20 @@ impl DoctorCommand {
             if JavaDetector::verify_installation(&version.path)? {
                 valid_count += 1;
             } else {
-                Self::print_warning(&format!("Invalid installation: {} at {}", version.version, version.path.display()));
+                Self::print_warning(&format!(
+                    "Invalid installation: {} at {}",
+                    version.version,
+                    version.path.display()
+                ));
                 invalid_count += 1;
             }
         }
 
         if invalid_count == 0 {
-            Self::print_success(&format!("All {} tracked installation(s) are valid", valid_count));
+            Self::print_success(&format!(
+                "All {} tracked installation(s) are valid",
+                valid_count
+            ));
             checks_passed += 1;
         } else {
             Self::print_warning(&format!("{} invalid installation(s) found", invalid_count));
@@ -102,10 +115,16 @@ impl DoctorCommand {
         println!("{}", style("Checking installation directory...").bold());
         let config = Config::load()?;
         if config.installation_dir.exists() {
-            Self::print_success(&format!("Installation directory exists: {}", config.installation_dir.display()));
+            Self::print_success(&format!(
+                "Installation directory exists: {}",
+                config.installation_dir.display()
+            ));
             checks_passed += 1;
         } else {
-            Self::print_error(&format!("Installation directory not found: {}", config.installation_dir.display()));
+            Self::print_error(&format!(
+                "Installation directory not found: {}",
+                config.installation_dir.display()
+            ));
             issues_found += 1;
         }
 
@@ -115,12 +134,19 @@ impl DoctorCommand {
         println!("{}", style("─".repeat(60)).dim());
         println!("{}", style("Summary:").bold());
         println!("  {} checks passed", style(checks_passed).green().bold());
-        
+
         if issues_found > 0 {
             println!("  {} issue(s) found", style(issues_found).yellow().bold());
-            println!("\n{}", style("Run 'jaman scan' to update tracked installations.").dim());
+            println!(
+                "\n{}",
+                style("Run 'jaman scan' to update tracked installations.").dim()
+            );
         } else {
-            println!("\n{} {}", style("✓").green().bold(), style("All checks passed!").green());
+            println!(
+                "\n{} {}",
+                style("✓").green().bold(),
+                style("All checks passed!").green()
+            );
         }
 
         Ok(())

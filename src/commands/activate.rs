@@ -1,8 +1,8 @@
+use crate::config::Config;
+use crate::path_manager::PathManager;
 use anyhow::Result;
 use console::style;
 use dialoguer::Select;
-use crate::config::Config;
-use crate::path_manager::PathManager;
 
 pub struct ActivateCommand;
 
@@ -12,7 +12,10 @@ impl ActivateCommand {
 
         if config.installed_versions.is_empty() {
             println!("{}", style("No Java versions installed.").yellow());
-            println!("\nUse {} to install a version.", style("jaman install").cyan());
+            println!(
+                "\nUse {} to install a version.",
+                style("jaman install").cyan()
+            );
             return Ok(());
         }
 
@@ -32,7 +35,7 @@ impl ActivateCommand {
                 .iter()
                 .map(|v| {
                     let lts = if v.is_lts { " [LTS]" } else { "" };
-                    let active = if config.active_version.as_ref().map_or(false, |av| av == &v.version) {
+                    let active = if config.active_version.as_ref() == Some(&v.version) {
                         " (active)"
                     } else {
                         ""
@@ -61,12 +64,16 @@ impl ActivateCommand {
 
         // Update config
         config.set_active(&selected_version.version)?;
-        
+
         // Mark as used
-        if let Some(version) = config.installed_versions.iter_mut().find(|v| v.version == selected_version.version) {
+        if let Some(version) = config
+            .installed_versions
+            .iter_mut()
+            .find(|v| v.version == selected_version.version)
+        {
             version.mark_used();
         }
-        
+
         config.save()?;
 
         println!(
@@ -77,11 +84,21 @@ impl ActivateCommand {
 
         // Verify
         println!("\n{}", style("Verification:").dim());
-        println!("  JAVA_HOME: {}", style(selected_version.path.display()).cyan());
-        println!("  Java bin:  {}", style(selected_version.java_executable().display()).cyan());
+        println!(
+            "  JAVA_HOME: {}",
+            style(selected_version.path.display()).cyan()
+        );
+        println!(
+            "  Java bin:  {}",
+            style(selected_version.java_executable().display()).cyan()
+        );
 
         if cfg!(windows) {
-            println!("\n{}", style("Environment variables updated. You may need to restart your terminal.").yellow());
+            println!(
+                "\n{}",
+                style("Environment variables updated. You may need to restart your terminal.")
+                    .yellow()
+            );
         }
 
         Ok(())

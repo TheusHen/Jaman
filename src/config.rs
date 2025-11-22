@@ -1,8 +1,8 @@
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use std::fs;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -37,11 +37,11 @@ impl Config {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?
             .join("jaman");
-        
+
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir)?;
         }
-        
+
         Ok(config_dir)
     }
 
@@ -51,9 +51,9 @@ impl Config {
 
     pub fn load() -> Result<Self> {
         let config_file = Self::config_file()?;
-        
+
         if !config_file.exists() {
-            return Ok(Self::default_config()?);
+            return Self::default_config();
         }
 
         let content = fs::read_to_string(config_file)?;
@@ -135,6 +135,7 @@ impl JavaVersion {
         }
     }
 
+    #[allow(dead_code)]
     pub fn javac_executable(&self) -> PathBuf {
         if cfg!(windows) {
             self.path.join("bin").join("javac.exe")

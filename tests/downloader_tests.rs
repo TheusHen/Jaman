@@ -1,11 +1,9 @@
 use jaman::downloader::{AvailableVersion, Downloader};
-use std::path::PathBuf;
 
 #[tokio::test]
 async fn test_downloader_new() {
-    let downloader = Downloader::new();
-    // Should create successfully
-    assert!(true);
+    let _downloader = Downloader::new();
+    // Should create successfully without panicking
 }
 
 #[tokio::test]
@@ -13,14 +11,14 @@ async fn test_downloader_new() {
 async fn test_fetch_available_versions() {
     let downloader = Downloader::new();
     let result = downloader.fetch_available_versions().await;
-    
+
     // Should return successfully
     assert!(result.is_ok());
-    
+
     if let Ok(versions) = result {
         // Should have some versions
         assert!(!versions.is_empty());
-        
+
         // Each version should have required fields
         for version in versions.iter().take(5) {
             assert!(!version.version.is_empty());
@@ -40,7 +38,7 @@ fn test_available_version_creation() {
         download_url: "https://example.com/java.zip".to_string(),
         checksum: Some("abc123".to_string()),
     };
-    
+
     assert_eq!(version.version, "21.0.1");
     assert_eq!(version.vendor, "Eclipse Temurin");
     assert!(version.is_lts);
@@ -55,9 +53,18 @@ fn test_extract_filename() {
         ("https://example.com/path/to/file.tar.gz", "file.tar.gz"),
         ("https://example.com/", "download.zip"),
     ];
-    
+
     for (url, expected) in urls {
-        let filename = url.split('/').last().unwrap_or("download.zip");
+        let filename = url
+            .split('/')
+            .next_back()
+            .unwrap_or("download.zip")
+            .to_string();
+        let filename = if filename.is_empty() {
+            "download.zip".to_string()
+        } else {
+            filename
+        };
         assert_eq!(filename, expected);
     }
 }
@@ -71,7 +78,7 @@ fn test_format_size() {
         (1024 * 1024 * 1024, "1.00 GB"),
         (1536 * 1024 * 1024, "1.50 GB"),
     ];
-    
+
     for (bytes, expected) in test_cases {
         let result = format_size(bytes);
         assert_eq!(result, expected);
@@ -97,10 +104,10 @@ fn format_size(bytes: u64) -> String {
 #[tokio::test]
 #[ignore] // Ignore as it requires actual download
 async fn test_download_and_install() {
-    let downloader = Downloader::new();
-    let temp_dir = tempfile::TempDir::new().unwrap();
-    
-    let version = AvailableVersion {
+    let _downloader = Downloader::new();
+    let _temp_dir = tempfile::TempDir::new().unwrap();
+
+    let _version = AvailableVersion {
         version: "21.0.1".to_string(),
         vendor: "Eclipse Temurin".to_string(),
         is_lts: true,
@@ -108,21 +115,21 @@ async fn test_download_and_install() {
         download_url: "https://example.com/java.zip".to_string(),
         checksum: None,
     };
-    
+
     // This would require a real download
     // In real tests, you'd mock the HTTP client
 }
 
 #[test]
 fn test_checksum_verification() {
-    use sha2::{Sha256, Digest};
-    
+    use sha2::{Digest, Sha256};
+
     let data = b"test data";
     let mut hasher = Sha256::new();
     hasher.update(data);
     let hash = hasher.finalize();
     let hash_str = hex::encode(hash);
-    
+
     assert!(!hash_str.is_empty());
     assert_eq!(hash_str.len(), 64); // SHA256 produces 64 hex characters
 }

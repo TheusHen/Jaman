@@ -1,9 +1,9 @@
+use crate::config::Config;
 use anyhow::Result;
+use chrono::{Duration, Utc};
 use console::style;
 use dialoguer::Confirm;
-use chrono::{Duration, Utc};
 use std::fs;
-use crate::config::Config;
 
 pub struct CleanCommand;
 
@@ -12,7 +12,14 @@ impl CleanCommand {
         let mut config = Config::load()?;
         let days_threshold = days.unwrap_or(90);
 
-        println!("{}\n", style(format!("Scanning for unused Java installations (not used in {} days)...", days_threshold)).bold());
+        println!(
+            "{}\n",
+            style(format!(
+                "Scanning for unused Java installations (not used in {} days)...",
+                days_threshold
+            ))
+            .bold()
+        );
 
         let threshold_date = Utc::now() - Duration::days(days_threshold);
         let mut unused_versions = Vec::new();
@@ -24,7 +31,7 @@ impl CleanCommand {
             }
 
             // Skip active version
-            if config.active_version.as_ref().map_or(false, |v| v == &version.version) {
+            if config.active_version.as_ref() == Some(&version.version) {
                 continue;
             }
 
@@ -44,7 +51,8 @@ impl CleanCommand {
             return Ok(());
         }
 
-        println!("{} {} unused installation(s) found:\n", 
+        println!(
+            "{} {} unused installation(s) found:\n",
             style("Found").yellow().bold(),
             style(unused_versions.len()).cyan().bold()
         );
@@ -70,7 +78,8 @@ impl CleanCommand {
             );
         }
 
-        println!("\n{} {}", 
+        println!(
+            "\n{} {}",
             style("Total space:").bold(),
             style(Self::format_size(total_size)).cyan().bold()
         );
@@ -140,7 +149,10 @@ impl CleanCommand {
         let mut total_size = 0u64;
 
         if path.is_dir() {
-            for entry in walkdir::WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+            for entry in walkdir::WalkDir::new(path)
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
                 if entry.file_type().is_file() {
                     total_size += entry.metadata()?.len();
                 }

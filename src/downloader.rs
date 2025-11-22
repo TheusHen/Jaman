@@ -1,11 +1,11 @@
 use anyhow::Result;
+use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::fs::{self, File};
 use std::io::Write;
-use futures_util::StreamExt;
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,13 +22,16 @@ pub struct Downloader {
     client: Client,
 }
 
+impl Default for Downloader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Downloader {
     pub fn new() -> Self {
         Self {
-            client: Client::builder()
-                .user_agent("jaman/0.1.0")
-                .build()
-                .unwrap(),
+            client: Client::builder().user_agent("jaman/0.1.0").build().unwrap(),
         }
     }
 
@@ -46,12 +49,8 @@ impl Downloader {
         let mut versions = Vec::new();
         let base_url = "https://api.adoptium.net/v3/info/available_releases";
 
-        let available_info: AdoptiumAvailableReleases = self.client
-            .get(base_url)
-            .send()
-            .await?
-            .json()
-            .await?;
+        let available_info: AdoptiumAvailableReleases =
+            self.client.get(base_url).send().await?.json().await?;
 
         let os = if cfg!(windows) {
             "windows"
@@ -100,14 +99,15 @@ impl Downloader {
     pub async fn download_and_install(
         &self,
         version: &AvailableVersion,
-        installation_dir: &PathBuf,
+        installation_dir: &Path,
     ) -> Result<PathBuf> {
         let temp_dir = TempDir::new()?;
         let filename = self.extract_filename(&version.download_url);
         let temp_file = temp_dir.path().join(&filename);
 
         // Download with progress bar
-        self.download_file(&version.download_url, &temp_file).await?;
+        self.download_file(&version.download_url, &temp_file)
+            .await?;
 
         // Verify checksum if available
         if let Some(ref checksum) = version.checksum {
@@ -115,7 +115,11 @@ impl Downloader {
         }
 
         // Extract archive
-        let extract_dir = installation_dir.join(&format!("{}-{}", version.vendor.replace(" ", "_"), version.version));
+        let extract_dir = installation_dir.join(format!(
+            "{}-{}",
+            version.vendor.replace(" ", "_"),
+            version.version
+        ));
         fs::create_dir_all(&extract_dir)?;
 
         self.extract_archive(&temp_file, &extract_dir)?;
@@ -153,7 +157,7 @@ impl Downloader {
     }
 
     fn verify_checksum(&self, file: &PathBuf, expected: &str) -> Result<()> {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let mut file = File::open(file)?;
         let mut hasher = Sha256::new();
@@ -185,7 +189,7 @@ impl Downloader {
         Ok(())
     }
 
-    fn extract_zip(&self, archive: &PathBuf, dest: &PathBuf) -> Result<()> {
+    fn extract_zip(&self, archive: &Path, dest: &Path) -> Result<()> {
         let file = File::open(archive)?;
         let mut archive = zip::ZipArchive::new(file)?;
 
@@ -229,7 +233,7 @@ impl Downloader {
         for entry in fs::read_dir(extract_dir)? {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.is_dir() {
                 let bin_dir = path.join("bin");
                 let java_exe = if cfg!(windows) {
@@ -250,7 +254,7 @@ impl Downloader {
 
     fn extract_filename(&self, url: &str) -> String {
         url.split('/')
-            .last()
+            .next_back()
             .unwrap_or("download.zip")
             .to_string()
     }
