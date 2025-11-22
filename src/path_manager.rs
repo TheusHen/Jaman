@@ -14,7 +14,7 @@ impl PathManager {
     #[cfg(windows)]
     pub fn add_jaman_to_path() -> Result<()> {
         use std::env;
-        
+
         // Get the current executable path
         let exe_path = env::current_exe()?;
         let exe_dir = exe_path
@@ -57,7 +57,7 @@ impl PathManager {
     #[cfg(not(windows))]
     pub fn add_jaman_to_path() -> Result<()> {
         use std::env;
-        
+
         let exe_path = env::current_exe()?;
         let exe_dir = exe_path
             .parent()
@@ -101,11 +101,11 @@ impl PathManager {
     /// Check if jaman is in PATH
     pub fn is_jaman_in_path() -> bool {
         use std::env;
-        
+
         if let Ok(exe_path) = env::current_exe() {
             if let Some(exe_dir) = exe_path.parent() {
                 let exe_dir_str = exe_dir.to_string_lossy();
-                
+
                 if let Ok(path_var) = env::var("PATH") {
                     let separator = if cfg!(windows) { ';' } else { ':' };
                     return path_var

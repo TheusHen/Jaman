@@ -234,7 +234,11 @@ async fn show_status() -> Result<()> {
     Ok(())
 }
 
-fn handle_config(set_install_dir: Option<String>, set_download_dir: Option<String>, show: bool) -> Result<()> {
+fn handle_config(
+    set_install_dir: Option<String>,
+    set_download_dir: Option<String>,
+    show: bool,
+) -> Result<()> {
     use config::Config;
     use std::path::PathBuf;
 
@@ -314,8 +318,8 @@ fn handle_config(set_install_dir: Option<String>, set_download_dir: Option<Strin
 
 /// Ensure jaman is added to PATH on first run
 fn ensure_jaman_in_path() -> Result<()> {
-    use path_manager::PathManager;
     use config::Config;
+    use path_manager::PathManager;
 
     // Check if this is the first run by checking if config exists
     let config_file = Config::config_file()?;
@@ -325,13 +329,9 @@ fn ensure_jaman_in_path() -> Result<()> {
     if !PathManager::is_jaman_in_path() {
         println!("{}", style("Setting up jaman...").cyan().bold());
         println!("{}", style("Adding jaman to system PATH...").dim());
-        
+
         if let Err(e) = PathManager::add_jaman_to_path() {
-            eprintln!(
-                "{} Failed to add jaman to PATH: {}",
-                style("⚠").yellow(),
-                e
-            );
+            eprintln!("{} Failed to add jaman to PATH: {}", style("⚠").yellow(), e);
             eprintln!(
                 "{}",
                 style("You may need to add jaman to PATH manually.").yellow()
@@ -342,7 +342,7 @@ fn ensure_jaman_in_path() -> Result<()> {
                 style("✓").green().bold(),
                 style("jaman added to PATH successfully!").green()
             );
-            
+
             if cfg!(windows) {
                 println!(
                     "{}",
@@ -354,7 +354,7 @@ fn ensure_jaman_in_path() -> Result<()> {
                     style("Please restart your terminal or run: source ~/.bashrc").dim()
                 );
             }
-            
+
             if is_first_run {
                 println!();
                 println!("{}", style("Welcome to jaman! 🎉").green().bold());

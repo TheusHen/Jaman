@@ -114,23 +114,47 @@ impl JavaDetector {
         if cfg!(windows) {
             // Get all available drives
             let drives = Self::get_available_drives();
-            
+
             for drive in drives {
                 // Common Java installation paths for each drive
                 paths.push(PathBuf::from(&drive).join("Program Files").join("Java"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Eclipse Adoptium"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Eclipse Foundation"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Amazon Corretto"));
+                paths.push(
+                    PathBuf::from(&drive)
+                        .join("Program Files")
+                        .join("Eclipse Adoptium"),
+                );
+                paths.push(
+                    PathBuf::from(&drive)
+                        .join("Program Files")
+                        .join("Eclipse Foundation"),
+                );
+                paths.push(
+                    PathBuf::from(&drive)
+                        .join("Program Files")
+                        .join("Amazon Corretto"),
+                );
                 paths.push(PathBuf::from(&drive).join("Program Files").join("Zulu"));
                 paths.push(PathBuf::from(&drive).join("Program Files").join("BellSoft"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Microsoft"));
+                paths.push(
+                    PathBuf::from(&drive)
+                        .join("Program Files")
+                        .join("Microsoft"),
+                );
                 paths.push(PathBuf::from(&drive).join("Program Files").join("GraalVM"));
                 paths.push(PathBuf::from(&drive).join("Program Files").join("Azul"));
                 paths.push(PathBuf::from(&drive).join("Program Files").join("Liberica"));
-                
+
                 // Also check Program Files (x86)
-                paths.push(PathBuf::from(&drive).join("Program Files (x86)").join("Java"));
-                paths.push(PathBuf::from(&drive).join("Program Files (x86)").join("Eclipse Adoptium"));
+                paths.push(
+                    PathBuf::from(&drive)
+                        .join("Program Files (x86)")
+                        .join("Java"),
+                );
+                paths.push(
+                    PathBuf::from(&drive)
+                        .join("Program Files (x86)")
+                        .join("Eclipse Adoptium"),
+                );
             }
         } else if cfg!(unix) {
             // Unix/Linux common paths
