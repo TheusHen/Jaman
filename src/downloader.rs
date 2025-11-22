@@ -46,7 +46,7 @@ impl Downloader {
         let mut versions = Vec::new();
         let base_url = "https://api.adoptium.net/v3/info/available_releases";
 
-        let response: AdoptiumAvailableReleases = self.client
+        let available_info: AdoptiumAvailableReleases = self.client
             .get(base_url)
             .send()
             .await?
@@ -68,7 +68,7 @@ impl Downloader {
         };
 
         // Fetch details for each version
-        for version in response.available_releases.iter().take(10) {
+        for version in available_info.available_releases.iter().take(10) {
             let url = format!(
                 "https://api.adoptium.net/v3/assets/latest/{}/hotspot?architecture={}&image_type=jdk&os={}",
                 version, arch, os
@@ -83,7 +83,7 @@ impl Downloader {
                         versions.push(AvailableVersion {
                             version: asset.version.semver,
                             vendor: "Eclipse Temurin".to_string(),
-                            is_lts: response.available_lts_releases.contains(version),
+                            is_lts: available_info.available_lts_releases.contains(version),
                             architecture: arch.to_string(),
                             download_url,
                             checksum: Some(checksum),
