@@ -108,66 +108,72 @@ impl JavaDetector {
         drives
     }
 
+    #[cfg(windows)]
     fn get_search_paths() -> Vec<PathBuf> {
         let mut paths = Vec::new();
 
-        if cfg!(windows) {
-            // Get all available drives
-            let drives = Self::get_available_drives();
+        // Get all available drives
+        let drives = Self::get_available_drives();
 
-            for drive in drives {
-                // Common Java installation paths for each drive
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Java"));
-                paths.push(
-                    PathBuf::from(&drive)
-                        .join("Program Files")
-                        .join("Eclipse Adoptium"),
-                );
-                paths.push(
-                    PathBuf::from(&drive)
-                        .join("Program Files")
-                        .join("Eclipse Foundation"),
-                );
-                paths.push(
-                    PathBuf::from(&drive)
-                        .join("Program Files")
-                        .join("Amazon Corretto"),
-                );
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Zulu"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("BellSoft"));
-                paths.push(
-                    PathBuf::from(&drive)
-                        .join("Program Files")
-                        .join("Microsoft"),
-                );
-                paths.push(PathBuf::from(&drive).join("Program Files").join("GraalVM"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Azul"));
-                paths.push(PathBuf::from(&drive).join("Program Files").join("Liberica"));
+        for drive in drives {
+            // Common Java installation paths for each drive
+            paths.push(PathBuf::from(&drive).join("Program Files").join("Java"));
+            paths.push(
+                PathBuf::from(&drive)
+                    .join("Program Files")
+                    .join("Eclipse Adoptium"),
+            );
+            paths.push(
+                PathBuf::from(&drive)
+                    .join("Program Files")
+                    .join("Eclipse Foundation"),
+            );
+            paths.push(
+                PathBuf::from(&drive)
+                    .join("Program Files")
+                    .join("Amazon Corretto"),
+            );
+            paths.push(PathBuf::from(&drive).join("Program Files").join("Zulu"));
+            paths.push(PathBuf::from(&drive).join("Program Files").join("BellSoft"));
+            paths.push(
+                PathBuf::from(&drive)
+                    .join("Program Files")
+                    .join("Microsoft"),
+            );
+            paths.push(PathBuf::from(&drive).join("Program Files").join("GraalVM"));
+            paths.push(PathBuf::from(&drive).join("Program Files").join("Azul"));
+            paths.push(PathBuf::from(&drive).join("Program Files").join("Liberica"));
 
-                // Also check Program Files (x86)
-                paths.push(
-                    PathBuf::from(&drive)
-                        .join("Program Files (x86)")
-                        .join("Java"),
-                );
-                paths.push(
-                    PathBuf::from(&drive)
-                        .join("Program Files (x86)")
-                        .join("Eclipse Adoptium"),
-                );
-            }
-        } else if cfg!(unix) {
-            // Unix/Linux common paths
-            paths.push(PathBuf::from("/usr/lib/jvm"));
-            paths.push(PathBuf::from("/usr/java"));
-            paths.push(PathBuf::from("/opt/java"));
-            paths.push(PathBuf::from("/Library/Java/JavaVirtualMachines"));
+            // Also check Program Files (x86)
+            paths.push(
+                PathBuf::from(&drive)
+                    .join("Program Files (x86)")
+                    .join("Java"),
+            );
+            paths.push(
+                PathBuf::from(&drive)
+                    .join("Program Files (x86)")
+                    .join("Eclipse Adoptium"),
+            );
+        }
 
-            // User-installed
-            if let Some(home) = dirs::home_dir() {
-                paths.push(home.join(".sdkman").join("candidates").join("java"));
-                paths.push(home.join(".jenv").join("versions"));
-            }
+        paths
+    }
+
+    #[cfg(not(windows))]
+    fn get_search_paths() -> Vec<PathBuf> {
+        let mut paths = Vec::new();
+
+        // Unix/Linux common paths
+        paths.push(PathBuf::from("/usr/lib/jvm"));
+        paths.push(PathBuf::from("/usr/java"));
+        paths.push(PathBuf::from("/opt/java"));
+        paths.push(PathBuf::from("/Library/Java/JavaVirtualMachines"));
+
+        // User-installed
+        if let Some(home) = dirs::home_dir() {
+            paths.push(home.join(".sdkman").join("candidates").join("java"));
+            paths.push(home.join(".jenv").join("versions"));
         }
 
         paths
