@@ -1,9 +1,9 @@
+use crate::config::JavaVersion;
 use anyhow::Result;
+use regex::Regex;
 use std::path::PathBuf;
 use std::process::Command;
 use walkdir::WalkDir;
-use regex::Regex;
-use crate::config::JavaVersion;
 
 pub struct JavaDetector;
 
@@ -35,7 +35,7 @@ impl JavaDetector {
             paths.push(PathBuf::from("C:\\Program Files\\BellSoft"));
             paths.push(PathBuf::from("C:\\Program Files\\Microsoft"));
             paths.push(PathBuf::from("C:\\Program Files\\GraalVM"));
-            
+
             // Also check Program Files (x86)
             paths.push(PathBuf::from("C:\\Program Files (x86)\\Java"));
             paths.push(PathBuf::from("C:\\Program Files (x86)\\Eclipse Adoptium"));
@@ -45,7 +45,7 @@ impl JavaDetector {
             paths.push(PathBuf::from("/usr/java"));
             paths.push(PathBuf::from("/opt/java"));
             paths.push(PathBuf::from("/Library/Java/JavaVirtualMachines"));
-            
+
             // User-installed
             if let Some(home) = dirs::home_dir() {
                 paths.push(home.join(".sdkman").join("candidates").join("java"));
@@ -66,7 +66,7 @@ impl JavaDetector {
             .filter_map(|e| e.ok())
         {
             let entry_path = entry.path();
-            
+
             // Check if this looks like a JDK root
             if Self::is_jdk_root(entry_path) {
                 if let Ok(version) = Self::detect_version(entry_path) {
@@ -101,9 +101,7 @@ impl JavaDetector {
         };
 
         // Execute java -version to get version info
-        let output = Command::new(&java_exe)
-            .arg("-version")
-            .output()?;
+        let output = Command::new(&java_exe).arg("-version").output()?;
 
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -128,9 +126,11 @@ impl JavaDetector {
         // java version "1.8.0_292"
         // openjdk version "11.0.12" 2021-07-20
         // java version "17.0.1" 2021-10-19 LTS
-        
+
         let version_re = Regex::new(r#"(?:java|openjdk) version "([^"]+)""#)?;
-        let vendor_re = Regex::new(r"(?i)(openjdk|oracle|adoptium|eclipse|corretto|amazon|zulu|azul|graalvm|bellsoft|liberica|microsoft|temurin)")?;
+        let vendor_re = Regex::new(
+            r"(?i)(openjdk|oracle|adoptium|eclipse|corretto|amazon|zulu|azul|graalvm|bellsoft|liberica|microsoft|temurin)",
+        )?;
 
         let version = version_re
             .captures(output)
@@ -191,9 +191,7 @@ impl JavaDetector {
         }
 
         // Try to run java -version
-        let result = Command::new(&java_exe)
-            .arg("-version")
-            .output();
+        let result = Command::new(&java_exe).arg("-version").output();
 
         Ok(result.is_ok())
     }

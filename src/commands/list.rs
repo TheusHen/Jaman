@@ -1,12 +1,17 @@
-use anyhow::Result;
-use console::style;
 use crate::config::Config;
 use crate::downloader::Downloader;
+use anyhow::Result;
+use console::style;
 
 pub struct ListCommand;
 
 impl ListCommand {
-    pub async fn execute(filter: Option<String>, available: bool, lts: bool, graalvm: bool) -> Result<()> {
+    pub async fn execute(
+        filter: Option<String>,
+        available: bool,
+        lts: bool,
+        graalvm: bool,
+    ) -> Result<()> {
         if available {
             Self::list_available(filter, lts, graalvm).await?;
         } else {
@@ -20,14 +25,17 @@ impl ListCommand {
 
         if config.installed_versions.is_empty() {
             println!("{}", style("No Java versions installed yet.").yellow());
-            println!("\nUse {} to install a version.", style("jaman install <version>").cyan());
+            println!(
+                "\nUse {} to install a version.",
+                style("jaman install <version>").cyan()
+            );
             return Ok(());
         }
 
         println!("{}\n", style("Installed Java Versions:").bold().green());
 
         let mut versions = config.installed_versions.clone();
-        
+
         // Apply filters
         if let Some(ref filter_str) = filter {
             versions.retain(|v| v.version.contains(filter_str));
@@ -41,8 +49,11 @@ impl ListCommand {
         versions.sort_by(|a, b| b.version.cmp(&a.version));
 
         for version in versions {
-            let is_active = config.active_version.as_ref().map_or(false, |v| v == &version.version);
-            
+            let is_active = config
+                .active_version
+                .as_ref()
+                .map_or(false, |v| v == &version.version);
+
             let status_icon = if is_active {
                 style("●").green().bold()
             } else {
@@ -79,7 +90,11 @@ impl ListCommand {
         }
 
         if let Some(active) = config.active_version {
-            println!("\n{} {}", style("Active version:").bold(), style(active).green());
+            println!(
+                "\n{} {}",
+                style("Active version:").bold(),
+                style(active).green()
+            );
         } else {
             println!("\n{}", style("No active version set.").yellow());
         }
@@ -87,7 +102,11 @@ impl ListCommand {
         Ok(())
     }
 
-    async fn list_available(filter: Option<String>, lts_only: bool, graalvm_only: bool) -> Result<()> {
+    async fn list_available(
+        filter: Option<String>,
+        lts_only: bool,
+        graalvm_only: bool,
+    ) -> Result<()> {
         println!("{}", style("Fetching available versions...").dim());
 
         let downloader = Downloader::new();
@@ -107,7 +126,10 @@ impl ListCommand {
         }
 
         if versions.is_empty() {
-            println!("{}", style("No versions found matching your criteria.").yellow());
+            println!(
+                "{}",
+                style("No versions found matching your criteria.").yellow()
+            );
             return Ok(());
         }
 
@@ -132,7 +154,10 @@ impl ListCommand {
             );
         }
 
-        println!("\n{}", style("Use 'jaman install <version>' to install a version.").dim());
+        println!(
+            "\n{}",
+            style("Use 'jaman install <version>' to install a version.").dim()
+        );
 
         Ok(())
     }

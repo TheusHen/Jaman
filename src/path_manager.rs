@@ -1,22 +1,25 @@
 use anyhow::Result;
-use std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 
 #[cfg(windows)]
-use winreg::enums::*;
-#[cfg(windows)]
 use winreg::RegKey;
+#[cfg(windows)]
+use winreg::enums::*;
 
 pub struct PathManager;
 
 impl PathManager {
     /// Set the active Java version by modifying system PATH
+    #[cfg(windows)]
     pub fn set_active_java(java_home: &PathBuf) -> Result<()> {
-        if cfg!(windows) {
-            Self::set_active_java_windows(java_home)
-        } else {
-            Self::set_active_java_unix(java_home)
-        }
+        Self::set_active_java_windows(java_home)
+    }
+
+    /// Set the active Java version by modifying system PATH
+    #[cfg(not(windows))]
+    pub fn set_active_java(java_home: &PathBuf) -> Result<()> {
+        Self::set_active_java_unix(java_home)
     }
 
     #[cfg(windows)]
@@ -30,14 +33,14 @@ impl PathManager {
 
         // Get current PATH
         let current_path: String = env_key.get_value("Path").unwrap_or_default();
-        
+
         // Remove any existing Java paths
         let cleaned_path = Self::remove_java_paths(&current_path);
-        
+
         // Add new Java bin to the beginning of PATH
         let java_bin = java_home.join("bin").to_string_lossy().to_string();
         let new_path = format!("{};{}", java_bin, cleaned_path);
-        
+
         env_key.set_value("Path", &new_path)?;
 
         // Broadcast environment change
@@ -49,8 +52,8 @@ impl PathManager {
     #[cfg(not(windows))]
     fn set_active_java_unix(java_home: &PathBuf) -> Result<()> {
         // For Unix systems, we'll create/update shell configuration files
-        let home_dir = dirs::home_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+        let home_dir =
+            dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
 
         let shell_configs = vec![
             home_dir.join(".bashrc"),
@@ -60,18 +63,21 @@ impl PathManager {
         ];
 
         let java_home_str = java_home.to_string_lossy();
-        let export_line = format!("\n# Added by jaman\nexport JAVA_HOME=\"{}\"\nexport PATH=\"$JAVA_HOME/bin:$PATH\"\n", java_home_str);
+        let export_line = format!(
+            "\n# Added by jaman\nexport JAVA_HOME=\"{}\"\nexport PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+            java_home_str
+        );
 
         for config_file in shell_configs {
             if config_file.exists() {
                 let mut content = std::fs::read_to_string(&config_file)?;
-                
+
                 // Remove old jaman entries
                 content = Self::remove_jaman_entries(&content);
-                
+
                 // Add new entry
                 content.push_str(&export_line);
-                
+
                 std::fs::write(&config_file, content)?;
             }
         }
@@ -83,9 +89,9 @@ impl PathManager {
 
     #[cfg(windows)]
     fn broadcast_environment_change() {
-        use std::ptr;
         use std::ffi::OsStr;
         use std::os::windows::ffi::OsStrExt;
+        use std::ptr;
 
         unsafe {
             const HWND_BROADCAST: isize = 0xffff;
@@ -131,7 +137,7 @@ impl PathManager {
                 !p_lower.contains("java") || p_lower.contains("javascript")
             })
             .collect();
-        
+
         filtered.join(";")
     }
 
@@ -170,19 +176,25 @@ impl PathManager {
         if let Some(java_home) = Self::get_current_java_home() {
             let config = crate::config::Config::load();
             if let Ok(config) = config {
-                return config.installed_versions.iter().any(|v| v.path == java_home);
+                return config
+                    .installed_versions
+                    .iter()
+                    .any(|v| v.path == java_home);
             }
         }
         false
     }
 
     /// Remove Java from PATH (deactivate)
+    #[cfg(windows)]
     pub fn deactivate_java() -> Result<()> {
-        if cfg!(windows) {
-            Self::deactivate_java_windows()
-        } else {
-            Self::deactivate_java_unix()
-        }
+        Self::deactivate_java_windows()
+    }
+
+    /// Remove Java from PATH (deactivate)
+    #[cfg(not(windows))]
+    pub fn deactivate_java() -> Result<()> {
+        Self::deactivate_java_unix()
     }
 
     #[cfg(windows)]
@@ -205,8 +217,8 @@ impl PathManager {
 
     #[cfg(not(windows))]
     fn deactivate_java_unix() -> Result<()> {
-        let home_dir = dirs::home_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+        let home_dir =
+            dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
 
         let shell_configs = vec![
             home_dir.join(".bashrc"),

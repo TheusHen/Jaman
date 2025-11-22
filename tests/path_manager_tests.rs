@@ -5,7 +5,7 @@ use std::path::PathBuf;
 fn test_get_current_java_home() {
     // Test getting current JAVA_HOME
     let java_home = PathManager::get_current_java_home();
-    
+
     // May or may not be set
     // Just verify it returns an Option
     assert!(java_home.is_some() || java_home.is_none());
@@ -28,7 +28,7 @@ fn test_remove_java_paths_windows() {
             "C:\\JavaScript\\bin;C:\\Node",
         ),
     ];
-    
+
     // Would test the remove_java_paths function
     // This is a simplified version
     for (input, expected) in test_cases {
@@ -49,7 +49,7 @@ fn test_remove_java_paths_windows() {
 fn test_is_jaman_active() {
     // Test if jaman is controlling Java
     let result = PathManager::is_jaman_active();
-    
+
     // Should return a boolean
     assert!(result == true || result == false);
 }
@@ -69,7 +69,7 @@ alias ll='ls -la'
 "#;
 
     let result = remove_jaman_entries(content);
-    
+
     assert!(!result.contains("Added by jaman"));
     assert!(!result.contains("JAVA_HOME=\"/path/to/java\""));
     assert!(result.contains("alias ll='ls -la'"));
@@ -106,7 +106,7 @@ fn test_path_validation() {
         PathBuf::from("/usr/lib/jvm/java-21"),
         PathBuf::from("C:\\Program Files\\Java\\jdk-21"),
     ];
-    
+
     for path in valid_paths {
         // Test that paths can be created
         assert!(!path.to_string_lossy().is_empty());
@@ -118,7 +118,7 @@ fn test_path_validation() {
 fn test_windows_path_format() {
     let path = PathBuf::from("C:\\Program Files\\Java\\jdk-21");
     let path_str = path.to_string_lossy();
-    
+
     assert!(path_str.contains("\\"));
     assert!(path_str.contains("Program Files"));
 }
@@ -128,7 +128,7 @@ fn test_windows_path_format() {
 fn test_unix_path_format() {
     let path = PathBuf::from("/usr/lib/jvm/java-21");
     let path_str = path.to_string_lossy();
-    
+
     assert!(path_str.starts_with("/"));
     assert!(!path_str.contains("\\"));
 }
