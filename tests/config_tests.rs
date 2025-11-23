@@ -4,17 +4,19 @@ use tempfile::TempDir;
 
 #[test]
 fn test_config_new() {
-    let dir = PathBuf::from("/test/path");
-    let config = Config::new(dir.clone());
+    let install_dir = PathBuf::from("/test/path");
+    let download_dir = PathBuf::from("/test/downloads");
+    let config = Config::new(install_dir.clone(), download_dir.clone());
 
-    assert_eq!(config.installation_dir, dir);
+    assert_eq!(config.installation_dir, install_dir);
+    assert_eq!(config.download_dir, download_dir);
     assert_eq!(config.active_version, None);
     assert_eq!(config.installed_versions.len(), 0);
 }
 
 #[test]
 fn test_add_version() {
-    let mut config = Config::new(PathBuf::from("/test"));
+    let mut config = Config::new(PathBuf::from("/test"), PathBuf::from("/test/downloads"));
 
     let version = JavaVersion::new(
         "21.0.1".to_string(),
@@ -33,7 +35,7 @@ fn test_add_version() {
 
 #[test]
 fn test_add_version_duplicate() {
-    let mut config = Config::new(PathBuf::from("/test"));
+    let mut config = Config::new(PathBuf::from("/test"), PathBuf::from("/test/downloads"));
 
     let version1 = JavaVersion::new(
         "21.0.1".to_string(),
@@ -63,7 +65,7 @@ fn test_add_version_duplicate() {
 
 #[test]
 fn test_remove_version() {
-    let mut config = Config::new(PathBuf::from("/test"));
+    let mut config = Config::new(PathBuf::from("/test"), PathBuf::from("/test/downloads"));
 
     let path = PathBuf::from("/test/java21");
     let version = JavaVersion::new(
@@ -84,7 +86,7 @@ fn test_remove_version() {
 
 #[test]
 fn test_get_version() {
-    let mut config = Config::new(PathBuf::from("/test"));
+    let mut config = Config::new(PathBuf::from("/test"), PathBuf::from("/test/downloads"));
 
     let version = JavaVersion::new(
         "21.0.1".to_string(),
@@ -107,7 +109,7 @@ fn test_get_version() {
 
 #[test]
 fn test_set_active() {
-    let mut config = Config::new(PathBuf::from("/test"));
+    let mut config = Config::new(PathBuf::from("/test"), PathBuf::from("/test/downloads"));
 
     let version = JavaVersion::new(
         "21.0.1".to_string(),
@@ -127,7 +129,7 @@ fn test_set_active() {
 
 #[test]
 fn test_set_active_not_found() {
-    let mut config = Config::new(PathBuf::from("/test"));
+    let mut config = Config::new(PathBuf::from("/test"), PathBuf::from("/test/downloads"));
 
     let result = config.set_active("21.0.1");
     assert!(result.is_err());
@@ -195,7 +197,10 @@ fn test_config_save_and_load() {
     let temp_dir = TempDir::new().unwrap();
     std::env::set_var("HOME", temp_dir.path());
 
-    let mut config = Config::new(temp_dir.path().join("jdks"));
+    let mut config = Config::new(
+        temp_dir.path().join("jdks"),
+        temp_dir.path().join("downloads"),
+    );
 
     let version = JavaVersion::new(
         "21.0.1".to_string(),
